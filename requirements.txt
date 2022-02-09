@@ -6,7 +6,6 @@ onnx
 onnx-simplifier
 opencv-python
 pyaml
-pycocotools
 pytorch-lightning>=1.4.0
 tabulate
 tensorboard

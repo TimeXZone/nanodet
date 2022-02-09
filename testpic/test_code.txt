@@ -1,0 +1,1 @@
+python demo/demo.py image --config config\nanodet-plus-m_416.yml --model model\nanodet-plus-m_416.pth --path testpic\test1.jpg

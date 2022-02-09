@@ -579,6 +579,7 @@ class GFLHead(nn.Module):
     def show_result(
         self, img, dets, class_names, score_thres=0.3, show=True, save_path=None
     ):
+        # result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres)
         result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres)
         if show:
             cv2.imshow("det", result)

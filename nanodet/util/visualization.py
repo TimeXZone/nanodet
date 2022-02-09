@@ -31,6 +31,7 @@ def overlay_bbox_cv(img, dets, class_names, score_thresh):
                 x0, y0, x1, y1 = [int(i) for i in bbox[:4]]
                 all_box.append([label, x0, y0, x1, y1, score])
     all_box.sort(key=lambda v: v[5])
+    print()
     for box in all_box:
         label, x0, y0, x1, y1, score = box
         # color = self.cmap(i)[:3]
@@ -40,7 +41,10 @@ def overlay_bbox_cv(img, dets, class_names, score_thresh):
         font = cv2.FONT_HERSHEY_SIMPLEX
         txt_size = cv2.getTextSize(text, font, 0.5, 2)[0]
         cv2.rectangle(img, (x0, y0), (x1, y1), color, 2)
-
+        # xmid = x0 + (x1 - x0) / 2
+        # ymid = y0 + (y1 - y0) / 2
+        #
+        # print(x0, y0, x1, y1, xmid, ymid, class_names[label])
         cv2.rectangle(
             img,
             (x0, y0 - txt_size[1] - 1),
@@ -52,12 +56,52 @@ def overlay_bbox_cv(img, dets, class_names, score_thresh):
     return img
 
 
+def show_overlay(dets, class_names, score_thresh):
+    all_box = []
+    for label in dets:
+        for bbox in dets[label]:
+            score = bbox[-1]
+            if score > score_thresh:
+                x0, y0, x1, y1 = [int(i) for i in bbox[:4]]
+                all_box.append([label, x0, y0, x1, y1, score])
+    all_box.sort(key=lambda v: v[5])
+    print()
+    class logs_need:
+        def __init__(self, no, point0, point1, pointmid, label_name, score):
+            self.no = no  # 编号
+            self.point0 = point0  # 左上坐标
+            self.point1 = point1  # 右下坐标
+            self.pointmid = pointmid  # 坐标中心
+            self.label_name = label_name  # 标签名
+            self.score = score  # 置信度得分
+    logsa = []
+    no = 0
+    for box in all_box:
+        label, x0, y0, x1, y1, score = box
+        xmid = x0 + (x1 - x0) / 2
+        ymid = y0 + (y1 - y0) / 2
+        no = no + 1
+        logs = logs_need(no, (x0, y0), (x1, y1), (xmid, ymid), class_names[label], score)
+        # logs.no = logs.no + 1
+        # logs.point0 = (x0, y0)
+        # logs.point1 = (x1, y1)
+        # logs.pointmid = (xmid, ymid)
+        # logs.label_name = class_names[label]
+        # logs.score = score
+        # print(logs.no,logs.point0, logs.point1, logs.pointmid, logs.label_name, logs.score)
+        # print(logs)
+        logsa.append(logs)
+        # print(x0, y0, x1, y1, xmid, ymid, class_names[label])
+
+    return logsa
+
+
 def rand_cmap(
-    nlabels,
-    type="bright",
-    first_color_black=False,
-    last_color_black=False,
-    verbose=False,
+        nlabels,
+        type="bright",
+        first_color_black=False,
+        last_color_black=False,
+        verbose=False,
 ):
     """
     Creates a random colormap to be used together with matplotlib.
@@ -341,8 +385,8 @@ class Visualizer:
                     text_pos = (x0, y0)
                     instance_area = (y1 - y0) * (x1 - x0)
                     if (
-                        instance_area < _SMALL_OBJECT_AREA_THRESH * self.viz.scale
-                        or y1 - y0 < 40 * self.viz.scale
+                            instance_area < _SMALL_OBJECT_AREA_THRESH * self.viz.scale
+                            or y1 - y0 < 40 * self.viz.scale
                     ):
                         if y1 >= self.viz.height - 5:
                             text_pos = (x1, y0)
@@ -351,9 +395,9 @@ class Visualizer:
 
                     height_ratio = (y1 - y0) / np.sqrt(self.viz.height * self.viz.width)
                     font_size = (
-                        np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
-                        * 0.5
-                        * self._default_font_size
+                            np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
+                            * 0.5
+                            * self._default_font_size
                     )
 
                     self.draw_text(
@@ -379,8 +423,8 @@ class Visualizer:
                     ma, thresh=127, maxval=255, type=cv2.THRESH_BINARY
                 )
                 fg = (
-                    im * alpha
-                    + np.ones(im.shape) * (1 - alpha) * self.cmap(i)[:3] * 255
+                        im * alpha
+                        + np.ones(im.shape) * (1 - alpha) * self.cmap(i)[:3] * 255
                 )
                 ov[ma == 255] = fg[ma == 255]
                 total_ma += ma
@@ -414,8 +458,8 @@ class Visualizer:
                 text_pos = np.median(binary_mask.nonzero(), axis=1)[::-1]
                 instance_area = (y1 - y0) * (x1 - x0)
                 if (
-                    instance_area < _SMALL_OBJECT_AREA_THRESH * self.viz.scale
-                    or y1 - y0 < 40 * self.viz.scale
+                        instance_area < _SMALL_OBJECT_AREA_THRESH * self.viz.scale
+                        or y1 - y0 < 40 * self.viz.scale
                 ):
                     if y1 >= self.viz.height - 5:
                         text_pos = (x1, y0)
@@ -424,9 +468,9 @@ class Visualizer:
 
                 height_ratio = (y1 - y0) / np.sqrt(self.viz.height * self.viz.width)
                 font_size = (
-                    np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
-                    * 0.5
-                    * self._default_font_size
+                        np.clip((height_ratio - 0.02) / 0.08 + 1, 1.2, 2)
+                        * 0.5
+                        * self._default_font_size
                 )
 
                 self.draw_text(
@@ -440,14 +484,14 @@ class Visualizer:
         return out
 
     def draw_text(
-        self,
-        text,
-        position,
-        *,
-        font_size=None,
-        color="g",
-        horizontal_alignment="center",
-        rotation=0
+            self,
+            text,
+            position,
+            *,
+            font_size=None,
+            color="g",
+            horizontal_alignment="center",
+            rotation=0
     ):
         """
         Args:
@@ -737,6 +781,6 @@ _COLORS = (
             0,
         ]
     )
-    .astype(np.float32)
-    .reshape(-1, 3)
+        .astype(np.float32)
+        .reshape(-1, 3)
 )

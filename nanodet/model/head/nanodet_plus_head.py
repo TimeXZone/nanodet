@@ -15,6 +15,7 @@ from ..module.init_weights import normal_init
 from ..module.nms import multiclass_nms
 from .assigner.dsl_assigner import DynamicSoftLabelAssigner
 from .gfl_head import Integral, reduce_mean
+from ...util.visualization import show_overlay
 
 
 class NanoDetPlusHead(nn.Module):
@@ -42,20 +43,20 @@ class NanoDetPlusHead(nn.Module):
     """
 
     def __init__(
-        self,
-        num_classes,
-        loss,
-        input_channel,
-        feat_channels=96,
-        stacked_convs=2,
-        kernel_size=5,
-        strides=[8, 16, 32],
-        conv_type="DWConv",
-        norm_cfg=dict(type="BN"),
-        reg_max=7,
-        activation="LeakyReLU",
-        assigner_cfg=dict(topk=13),
-        **kwargs
+            self,
+            num_classes,
+            loss,
+            input_channel,
+            feat_channels=96,
+            stacked_convs=2,
+            kernel_size=5,
+            strides=[8, 16, 32],
+            conv_type="DWConv",
+            norm_cfg=dict(type="BN"),
+            reg_max=7,
+            activation="LeakyReLU",
+            assigner_cfg=dict(topk=13),
+            **kwargs
     ):
         super(NanoDetPlusHead, self).__init__()
         self.num_classes = num_classes
@@ -136,9 +137,9 @@ class NanoDetPlusHead(nn.Module):
             return self._forward_onnx(feats)
         outputs = []
         for feat, cls_convs, gfl_cls in zip(
-            feats,
-            self.cls_convs,
-            self.gfl_cls,
+                feats,
+                self.cls_convs,
+                self.gfl_cls,
         ):
             for conv in cls_convs:
                 feat = conv(feat)
@@ -192,7 +193,7 @@ class NanoDetPlusHead(nn.Module):
                 [self.num_classes, 4 * (self.reg_max + 1)], dim=-1
             )
             aux_dis_preds = (
-                self.distribution_project(aux_reg_preds) * center_priors[..., 2, None]
+                    self.distribution_project(aux_reg_preds) * center_priors[..., 2, None]
             )
             aux_decoded_bboxes = distance2bbox(center_priors[..., :2], aux_dis_preds)
             batch_assign_res = multi_apply(
@@ -276,7 +277,7 @@ class NanoDetPlusHead(nn.Module):
 
     @torch.no_grad()
     def target_assign_single_img(
-        self, cls_preds, center_priors, decoded_bboxes, gt_bboxes, gt_labels
+            self, cls_preds, center_priors, decoded_bboxes, gt_bboxes, gt_labels
     ):
         """Compute classification, regression, and objectness targets for
         priors in a single image.
@@ -323,8 +324,8 @@ class NanoDetPlusHead(nn.Module):
         if len(pos_inds) > 0:
             bbox_targets[pos_inds, :] = pos_gt_bboxes
             dist_targets[pos_inds, :] = (
-                bbox2distance(center_priors[pos_inds, :2], pos_gt_bboxes)
-                / center_priors[pos_inds, None, 2]
+                    bbox2distance(center_priors[pos_inds, :2], pos_gt_bboxes)
+                    / center_priors[pos_inds, None, 2]
             )
             dist_targets = dist_targets.clamp(min=0, max=self.reg_max - 0.1)
             labels[pos_inds] = gt_labels[pos_assigned_gt_inds]
@@ -341,13 +342,13 @@ class NanoDetPlusHead(nn.Module):
         """Sample positive and negative bboxes."""
         pos_inds = (
             torch.nonzero(assign_result.gt_inds > 0, as_tuple=False)
-            .squeeze(-1)
-            .unique()
+                .squeeze(-1)
+                .unique()
         )
         neg_inds = (
             torch.nonzero(assign_result.gt_inds == 0, as_tuple=False)
-            .squeeze(-1)
-            .unique()
+                .squeeze(-1)
+                .unique()
         )
         pos_assigned_gt_inds = assign_result.gt_inds[pos_inds] - 1
 
@@ -395,7 +396,7 @@ class NanoDetPlusHead(nn.Module):
         )
 
         for result, img_width, img_height, img_id, warp_matrix in zip(
-            result_list, img_widths, img_heights, img_ids, warp_matrixes
+                result_list, img_widths, img_heights, img_ids, warp_matrixes
         ):
             det_result = {}
             det_bboxes, det_labels = result
@@ -417,12 +418,26 @@ class NanoDetPlusHead(nn.Module):
         return det_results
 
     def show_result(
-        self, img, dets, class_names, score_thres=0.3, show=True, save_path=None
+            self, img, dets, class_names, score_thres=0.3, show=True, save_path=None
     ):
         result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres)
+
+        logs = show_overlay(dets, class_names, score_thres)
+        for log in logs:
+            print(log.no, log.point0, log.point0, log.point1, log.pointmid, log.label_name, log.score)
+        #     print(log)
+
         if show:
             cv2.imshow("det", result)
-        return result
+        return result  # return img
+
+    # def show_only_logs(
+    #         self, img, dets, class_names, score_thres=0.3, show=True, save_path=None
+    # ):
+    #     result = overlay_bbox_cv(img, dets, class_names, score_thresh=score_thres)
+    #     if show:
+    #         cv2.imshow("det", result)
+    #     return result  # return logs
 
     def get_bboxes(self, cls_preds, reg_preds, img_metas):
         """Decode the outputs to bboxes.
@@ -476,7 +491,7 @@ class NanoDetPlusHead(nn.Module):
         return result_list
 
     def get_single_level_center_priors(
-        self, batch_size, featmap_size, stride, dtype, device
+            self, batch_size, featmap_size, stride, dtype, device
     ):
         """Generate centers of a single stage feature map.
         Args:
@@ -502,9 +517,9 @@ class NanoDetPlusHead(nn.Module):
         """only used for onnx export"""
         outputs = []
         for feat, cls_convs, gfl_cls in zip(
-            feats,
-            self.cls_convs,
-            self.gfl_cls,
+                feats,
+                self.cls_convs,
+                self.gfl_cls,
         ):
             for conv in cls_convs:
                 feat = conv(feat)
